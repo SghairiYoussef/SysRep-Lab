@@ -3,6 +3,7 @@ package org.example;
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.Connection;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.Scanner;
 import java.util.UUID;
@@ -22,28 +23,55 @@ public class ConsoleApp {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
+        boolean exit = false;
 
-        System.out.println("Select role:");
-        System.out.println("1. BO1");
-        System.out.println("2. BO2");
-        System.out.println("3. HO");
-        System.out.print("Enter choice: ");
+        while (!exit) {
+            System.out.println("Main Menu:");
+            System.out.println("1. Run Producer");
+            System.out.println("2. Run Consumer");
+            System.out.println("3. Exit");
+            System.out.print("Enter your choice: ");
 
-        int choice = Integer.parseInt(scanner.nextLine());
+            String choice = scanner.nextLine();
 
-        switch (choice) {
-            case 1:
-                runProducer(BO1_DB_URL, "BO1", scanner);
-                break;
-            case 2:
-                runProducer(BO2_DB_URL, "BO2", scanner);
-                break;
-            case 3:
-                runConsumer();
-                break;
-            default:
-                System.out.println("Invalid option. Exiting.");
-                break;
+            switch (choice) {
+                case "1":
+                    System.out.println("Select a branch office to produce data:");
+                    System.out.println("1. BO1");
+                    System.out.println("2. BO2");
+                    System.out.print("Enter your choice: ");
+                    String boChoice = scanner.nextLine();
+
+                    String dbUrl;
+                    String boName;
+
+                    if ("1".equals(boChoice)) {
+                        dbUrl = BO1_DB_URL;
+                        boName = "BO1";
+                    } else if ("2".equals(boChoice)) {
+                        dbUrl = BO2_DB_URL;
+                        boName = "BO2";
+                    } else {
+                        System.out.println("Invalid input. Returning to main menu...");
+                        continue;
+                    }
+
+                    runProducer(dbUrl, boName, scanner);
+                    break;
+
+                case "2":
+                    runConsumer();
+                    break;
+
+                case "3":
+                    exit = true;
+                    System.out.println("Exiting program. Goodbye!");
+                    break;
+
+                default:
+                    System.out.println("Invalid choice. Please enter 1, 2, or 3.");
+                    break;
+            }
         }
         scanner.close();
     }
@@ -88,15 +116,7 @@ public class ConsoleApp {
                 // Insert sale into the local BO database
                 String insertSql = "INSERT INTO sales (id, date, product, qty, cost, amt, tax, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
                 try (PreparedStatement pst = dbConnection.prepareStatement(insertSql)) {
-                    pst.setString(1, id);
-                    pst.setString(2, date);
-                    pst.setString(3, product);
-                    pst.setInt(4, qty);
-                    pst.setDouble(5, cost);
-                    pst.setDouble(6, amount);
-                    pst.setDouble(7, tax);
-                    pst.setDouble(8, total);
-                    pst.executeUpdate();
+                    insertToDatabase(id, date, product, qty, cost, tax, amount, total, pst);
                     System.out.println("Sale inserted into local database.");
                 } catch (SQLException e) {
                     System.err.println("Error inserting into DB: " + e.getMessage());
@@ -107,13 +127,25 @@ public class ConsoleApp {
                         id, date, product, qty, cost, amount, tax, total, boName
                 );
 
-                channel.basicPublish("", QUEUE_NAME, null, message.getBytes("UTF-8"));
+                channel.basicPublish("", QUEUE_NAME, null, message.getBytes(StandardCharsets.UTF_8));
                 System.out.println("Sent message: " + message);
             }
 
         } catch (Exception ex) {
             Logger.getLogger(ConsoleApp.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
         }
+    }
+
+    private static void insertToDatabase(String id, String date, String product, int qty, double cost, double tax, double amount, double total, PreparedStatement pst) throws SQLException {
+        pst.setString(1, id);
+        pst.setString(2, date);
+        pst.setString(3, product);
+        pst.setInt(4, qty);
+        pst.setDouble(5, cost);
+        pst.setDouble(6, amount);
+        pst.setDouble(7, tax);
+        pst.setDouble(8, total);
+        pst.executeUpdate();
     }
 
     private static void runConsumer() {
@@ -127,7 +159,7 @@ public class ConsoleApp {
             System.out.println("HO Consumer started. Waiting for messages...");
 
             DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-                String message = new String(delivery.getBody(), "UTF-8");
+                String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                 System.out.println("Received message: " + message);
 
                 try {
@@ -176,15 +208,7 @@ public class ConsoleApp {
                     try (java.sql.Connection hoDbConnection = DriverManager.getConnection(HO_DB_URL, DB_USER, DB_PASSWORD)) {
                         String insertSql = "INSERT INTO sales (id, date, product, qty, cost, amt, tax, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
                         try (PreparedStatement pst = hoDbConnection.prepareStatement(insertSql)) {
-                            pst.setString(1, id);
-                            pst.setString(2, date);
-                            pst.setString(3, product);
-                            pst.setInt(4, qty);
-                            pst.setDouble(5, cost);
-                            pst.setDouble(6, amt);
-                            pst.setDouble(7, tax);
-                            pst.setDouble(8, total);
-                            pst.executeUpdate();
+                            insertToDatabase(id, date, product, qty, cost, tax, amt, total, pst);
                             System.out.println("Inserted sale into HO database.");
                         }
                     } catch (SQLException e) {
