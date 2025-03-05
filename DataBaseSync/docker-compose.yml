@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   ho_sales_db:
     image: mysql:5.7
