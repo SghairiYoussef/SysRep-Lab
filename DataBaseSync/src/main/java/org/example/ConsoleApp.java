@@ -27,8 +27,8 @@ public class ConsoleApp {
 
         while (!exit) {
             System.out.println("Main Menu:");
-            System.out.println("1. Run Producer");
-            System.out.println("2. Run Consumer");
+            System.out.println("1. BO");
+            System.out.println("2. HO");
             System.out.println("3. Exit");
             System.out.print("Enter your choice: ");
 
@@ -113,7 +113,6 @@ public class ConsoleApp {
                 double amount = cost * qty;
                 double total = amount + tax;
 
-                // Insert sale into the local BO database
                 String insertSql = "INSERT INTO sales (id, date, product, qty, cost, amt, tax, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
                 try (PreparedStatement pst = dbConnection.prepareStatement(insertSql)) {
                     insertToDatabase(id, date, product, qty, cost, tax, amount, total, pst);
@@ -148,6 +147,19 @@ public class ConsoleApp {
         pst.executeUpdate();
     }
 
+    private static void insertToHODatabase(String id, String date, String product, int qty, double cost, double tax, double amount, double total, String source, PreparedStatement pst) throws SQLException {
+        pst.setString(1, id);
+        pst.setString(2, date);
+        pst.setString(3, product);
+        pst.setInt(4, qty);
+        pst.setDouble(5, cost);
+        pst.setDouble(6, amount);
+        pst.setDouble(7, tax);
+        pst.setDouble(8, total);
+        pst.setString(9, source);
+        pst.executeUpdate();
+    }
+
     private static void runConsumer() {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost("localhost");
@@ -171,6 +183,7 @@ public class ConsoleApp {
                     String product = "";
                     int qty = 0;
                     double cost = 0.0, amt = 0.0, tax = 0.0, total = 0.0;
+                    String source = "";
 
                     for (String part : parts) {
                         String[] keyValue = part.split(":", 2);
@@ -202,13 +215,16 @@ public class ConsoleApp {
                             case "total":
                                 total = Double.parseDouble(value);
                                 break;
+                            case "source":
+                                source = value;
+                                break;
                         }
                     }
 
                     try (java.sql.Connection hoDbConnection = DriverManager.getConnection(HO_DB_URL, DB_USER, DB_PASSWORD)) {
-                        String insertSql = "INSERT INTO sales (id, date, product, qty, cost, amt, tax, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                        String insertSql = "INSERT INTO sales (id, date, product, qty, cost, amt, tax, total, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
                         try (PreparedStatement pst = hoDbConnection.prepareStatement(insertSql)) {
-                            insertToDatabase(id, date, product, qty, cost, tax, amt, total, pst);
+                            insertToHODatabase(id, date, product, qty, cost, tax, amt, total, source, pst);
                             System.out.println("Inserted sale into HO database.");
                         }
                     } catch (SQLException e) {

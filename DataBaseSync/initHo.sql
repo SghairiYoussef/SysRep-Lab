@@ -10,5 +10,6 @@ CREATE TABLE IF NOT EXISTS sales (
     cost DECIMAL(10, 2),
     amt DECIMAL(10, 2),
     tax DECIMAL(10, 2),
-    total DECIMAL(10, 2)
+    total DECIMAL(10, 2),
+    source CHAR(3)
 );
