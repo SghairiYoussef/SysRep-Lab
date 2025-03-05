@@ -30,9 +30,9 @@ public class RabbitMQService {
             System.out.println(" [x] Received '" + message + "'");
 
             // Database connection details for HO
-            String url = "jdbc:mysql://localhost:3306/HO"; // Replace with your HO database name
-            String user = "guest"; // Replace with your MySQL username
-            String password = "110203"; // Replace with your MySQL password
+            String url = "jdbc:mysql://localhost:3306/sales_db"; // Replace with your HO database name
+            String user = "user"; // Replace with your MySQL username
+            String password = "password"; // Replace with your MySQL password
 
             try (java.sql.Connection dbConnection = DriverManager.getConnection(url, user, password)) {
                 // Parse the message (assuming it's in JSON-like format)
@@ -48,7 +48,7 @@ public class RabbitMQService {
                 double total = Double.parseDouble(parts[8].split(":")[1].trim());
 
                 // Insert the data into the HO database
-                String sql = "INSERT INTO product_sales (id, date, region, product, qty, cost, amt, tax, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                String sql = "INSERT INTO sales (id, date, region, product, qty, cost, amt, tax, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 try (PreparedStatement pst = dbConnection.prepareStatement(sql)) {
                     pst.setInt(1, id);
                     pst.setString(2, date);

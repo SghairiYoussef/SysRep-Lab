@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  ho_sales_db:
+    image: mysql:5.7
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - '3306:3306'
+    volumes:
+      - ./apps/ho_sales_data:/var/lib/mysql
+      - ./initHo.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password
+  bo1_sales_db:
+    image: mysql:5.7
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - '3307:3306'
+    volumes:
+      - ./apps/bo1_sales_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password
+  bo2_sales_db:
+    image: mysql:5.7
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - '3308:3306'
+    volumes:
+      - ./apps/bo2_sales_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password

@@ -14,10 +14,10 @@ public class JdbcService {
 
     public static void main(String[] args) {
         // Database connection details
-        String url = "jdbc:mysql://localhost:3306/BO1"; // Replace with your BO1 database name
-        String user = "root"; // Replace with your MySQL username
-        String password = "110203"; // Replace with your MySQL password
-        String query = "SELECT * FROM product_sales"; // Query to fetch data
+        String url = "jdbc:mysql://localhost:3307/sales_db"; // Replace with your BO1 database name
+        String user = "user"; // Replace with your MySQL username
+        String password = "password"; // Replace with your MySQL password
+        String query = "SELECT * FROM sales"; // Query to fetch data
 
         // RabbitMQ connection
         ConnectionFactory factory = new ConnectionFactory();
